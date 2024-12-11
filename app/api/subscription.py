@@ -123,10 +123,18 @@ async def validate_license(license_key: str, device_address: str):
     result = await check_and_update_device_address(license_key, device_address)
     return result
 
+@router.get("/download-guidebook")
+async def download_pdf():
+    book_file_path = "./download/guidebook.pdf"
+    if not os.path.exists(book_file_path):
+        raise HTTPException(status_code=404, detail="Guidebook was not found")
+    
+    return FileResponse(book_file_path, media_type='application/octet-stream', filename="guidebook.pdf")
+
 @router.get("/download-app")
 async def download_app():
-    app_file_path = "../../download/holograil.zip"
+    app_file_path = "./download/holograil.zip"
     if not os.path.exists(app_file_path):
-        raise HTTPException(status_code=404, detail="App file not found")
+        raise HTTPException(status_code=404, detail="App file was not found")
     
     return FileResponse(app_file_path, media_type='application/octet-stream', filename="holograil.zip")
