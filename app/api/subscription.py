@@ -30,8 +30,8 @@ async def create_checkout_session(user_mail: str, plan_id: str):
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url='http://localhost:5173/accounts/overview',
-            cancel_url='http://localhost:5173/accounts/overview',
+            success_url='https://thegrail.app/accounts/overview',
+            cancel_url='https://thegrail.app/accounts/overview',
         )
         return session
     except stripe.error.StripeError as e:
