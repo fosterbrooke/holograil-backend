@@ -125,7 +125,7 @@ async def validate_license(license_key: str, device_address: str):
 
 @router.get("/download-app")
 async def download_app():
-    app_file_path = "./holograil.zip"
+    app_file_path = "./download/holograil.zip"
     if not os.path.exists(app_file_path):
         raise HTTPException(status_code=404, detail="App file not found")
     
