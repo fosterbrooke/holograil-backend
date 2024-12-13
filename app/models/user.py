@@ -12,8 +12,8 @@ class User(BaseModel):
     is_email_verified: bool = False
     email_verification_token: Optional[str] = None
     email_verification_expires: Optional[datetime] = None
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
+    created_at: datetime = datetime.utcnow()
+    updated_at: datetime = datetime.utcnow()
 
     @validator('id', pre=True, always=True)
     def convert_objectid_to_str(cls, v):
