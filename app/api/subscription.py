@@ -91,7 +91,7 @@ async def stripe_webhook(request: Request):
 
                 user = await get_user_by_email(customer_email)
                 if user:
-                    license_key = generate_license_key(user.model_dump(), timedelta(days=duration_days))
+                    license_key = generate_license_key(user.dict(), timedelta(days=duration_days))
 
                     license_data = License(
                         user_id=user.id,

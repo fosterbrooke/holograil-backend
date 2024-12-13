@@ -31,6 +31,8 @@ def generate_license_key(user_info: dict, duration: timedelta):
         "user_info": user_info,
         "expire_date": expire_date
     }
+    print(user_info)
+    print(data)
     return encrypt_data(data, key)
 
 # Extract information from a license key
