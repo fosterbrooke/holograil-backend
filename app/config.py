@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     STRIPE_API_KEY: str
     STRIPE_WEBHOOK_SECRET: str
+    MAILGUN_API_KEY: str
+    MAILGUN_DOMAIN: str
+    FRONTEND_URL: str
 
     class Config:
         env_file = ".env"
