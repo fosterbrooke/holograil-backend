@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 import os
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from app.models.license import License
 from app.schemas.user import UserInDB
 from app.crud.user import get_user_by_email
@@ -15,25 +16,76 @@ stripe.api_key = settings.STRIPE_API_KEY
 
 router = APIRouter()
 
-@router.post("/create-checkout-session")
-async def create_checkout_session(user_mail: str, plan_id: str):
-    user = await get_user_by_email(user_mail)
+class PurchaseRequestBody(BaseModel):
+    email: str
+    plan_id: str = None  # Optional for one-payment
+    payment_method_id: str = None  # Required for one-payment
+    amount: int = None  # Required for one-payment
+
+@router.post("/create-checkout-session/{mode}") 
+async def create_checkout_session(
+    mode: str,
+    body: PurchaseRequestBody
+):
+    user = await get_user_by_email(body.email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            customer_email=user.email,
-            line_items=[{
-                'price': plan_id,
-                'quantity': 1,
-            }],
-            mode='subscription',
-            success_url='https://thegrail.app/accounts/overview',
-            cancel_url='https://thegrail.app/accounts/overview',
-        )
-        return session
+        if mode == "subscription":
+            if not body.plan_id:
+                raise HTTPException(status_code=400, detail="Plan ID is required for subscriptions.")
+            
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                customer_email=user.email,
+                line_items=[{
+                    'price': body.plan_id,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url='https://thegrail.app/accounts/overview',
+                cancel_url='https://thegrail.app/accounts/overview',
+            )
+            
+            return session
+        
+        elif mode == "one-payment":
+            if not body.payment_method_id or not body.amount:
+                raise HTTPException(status_code=400, detail="Payment method ID and amount are required for one-time payments.")
+            
+            customer = stripe.Customer.create(
+                email=body.email,
+                payment_method=body.payment_method_id,
+                invoice_settings={"default_payment_method": body.payment_method_id},
+            )
+            
+            # Create a checkout session
+            session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                mode="payment",
+                customer=customer.id,
+                line_items=[
+                    {
+                        "price_data": {
+                            "currency": "usd",
+                            "product_data": {
+                                "name": "Purchase Cart Items",
+                            },
+                            "unit_amount": body.amount,
+                        },
+                        "quantity": 1,
+                    },
+                ],
+                success_url='https://thegrail.app/accounts/overview',
+                cancel_url='https://thegrail.app/accounts/overview',
+            )
+
+            return session
+
+        else:
+            raise HTTPException(status_code=400, detail="Invalid mode specified.")
+            
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
